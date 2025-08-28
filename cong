@@ -1,0 +1,74 @@
+        // =========================== Utils I/O ===========================
+        private void send(String msg) {
+            if (out != null) out.println(msg);
+        }
+
+        private String readLineOrNull() throws IOException {
+            String line = (in != null) ? in.readLine() : null;
+            if (line == null) connected = false;
+            return line;
+        }
+
+        private String getPlayerMove() throws IOException {
+            while (connected) {
+                send("Chon (keo, bua, bao) va enter: ");
+                String move = readLineOrNull();
+                if (!connected || move == null) return null;
+                move = move.trim().toLowerCase();
+                if (move.equals("keo") || move.equals("bua") || move.equals("bao")) return move;
+                send("Lua chon khong hop le, nhap lai di may.");
+            }
+            return null;
+            }
+
+        // =========================== Cleanup ===========================
+        private void detachFromOpponentAndSession() {
+            synchronized (waitingPlayers) {
+                waitingPlayers.remove(this);
+            }
+            if (session != null) {
+                session.playing = false;
+                if (opponent != null) {
+                    opponent.send("Doi thu " + name + " da roi tran / roi game.");
+                    synchronized (opponent) { opponent.notify(); }
+                }
+            }
+            opponent = null;
+            session = null;
+            isHost = false;
+        }
+
+        private void cleanup() {
+            connected = false;
+            synchronized (waitingPlayers) {
+                waitingPlayers.remove(this);
+            }
+            if (session != null) {
+                session.playing = false;
+                if (opponent != null) {
+                    synchronized (opponent) { opponent.notify(); }
+                }
+            }
+            try { if (in != null) in.close(); } catch (IOException ignored) {}
+            if (out != null) out.close();
+            try { if (clientSocket != null) clientSocket.close(); } catch (IOException ignored) {}
+        }
+    }
+
+    // ====================== Logic Keo-Bua-Bao ======================
+    private static String getBotMove() {
+        String[] options = {"keo", "bua", "bao"};
+        return options[ThreadLocalRandom.current().nextInt(options.length)];
+    }
+
+    // Trả về "hoa", "player1", "player2" — player1 là p1 trong session
+    private static String getResult(String move1, String move2) {
+        if (move1.equals(move2)) return "hoa";
+        if ((move1.equals("keo") && move2.equals("bao")) ||
+            (move1.equals("bua") && move2.equals("keo")) ||
+            (move1.equals("bao") && move2.equals("bua"))) {
+            return "player1";
+        }
+        return "player2";
+    }
+}
