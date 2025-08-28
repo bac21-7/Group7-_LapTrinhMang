@@ -1,0 +1,21 @@
+static class GameSession {
+        final ClientHandler p1, p2;
+        final CyclicBarrier barrier = new CyclicBarrier(2); // đồng bộ mỗi vòng
+        volatile String p1Move, p2Move;
+        volatile boolean playing = true;
+        final int gameId;
+        int p1Score = 0, p2Score = 0;
+
+        GameSession(ClientHandler p1, ClientHandler p2, int gameId) {
+            this.p1 = p1;
+            this.p2 = p2;
+            this.gameId = gameId;
+        }
+
+        void setMove(ClientHandler who, String move) {
+            if (who == p1) p1Move = move;
+            else p2Move = move;
+        }
+
+        void clearMoves() { p1Move = null; p2Move = null; }
+    }
