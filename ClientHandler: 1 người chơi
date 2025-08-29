@@ -1,0 +1,37 @@
+ private static class ClientHandler implements Runnable {
+        private final Socket clientSocket;
+        private PrintWriter out;
+        private BufferedReader in;
+
+        private String name = "Anonymous";
+        private volatile boolean connected = true;
+
+        private ClientHandler opponent;
+        private GameSession session;
+        private boolean isHost = false; // chỉ host tính & broadcast kết quả
+        private boolean playingBot = false;
+
+        ClientHandler(Socket socket) {
+            this.clientSocket = socket;
+        }
+
+        @Override
+        public void run() {
+            try {
+                out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8"), true);
+                in  = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
+
+                send("Nhap ten may di: ");
+                String n = readLineOrNull();
+                name = (n == null || n.isBlank()) ? name : n.trim();
+                send("Chao may, " + name + "! Chao mung den voi game Keo-Bua-Bao.");
+
+                mainMenuLoop();
+
+            } catch (IOException e) {
+                System.out.println("Loi ket noi tu client " + name + ": " + e.getMessage());
+            } finally {
+                cleanup();
+                System.out.println("-> Nguoi choi " + name + " da thoat.");
+            }
+        }
